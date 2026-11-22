@@ -27,7 +27,13 @@
         "url": "https://coolcode.ca/exportneighbours/data/edition.json",
         "path": [
           "retrieved"
-        ]
+        ],
+        "count_at": {
+          "path": [
+            "count"
+          ],
+          "unit": "published trade cells"
+        }
       },
       {
         "label": "Trade months",
