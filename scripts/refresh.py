@@ -10,7 +10,7 @@ from pathlib import Path
 import re
 import tempfile
 from urllib.error import HTTPError
-from urllib.request import urlopen
+from urllib.request import Request, urlopen
 import shutil
 import zipfile
 
@@ -86,7 +86,8 @@ def refresh(folder, cache=None):
             archive = (Path(cache) if cache else Path(tmp)) / f'{year}.zip'
             if not archive.exists():
                 try:
-                    with urlopen(url, timeout=120) as response, archive.open('wb') as f:
+                    request = Request(url, headers={'User-Agent':'CoolCode/1.0 (+https://coolcode.ca/exportneighbours/)'})
+                    with urlopen(request, timeout=120) as response, archive.open('wb') as f:
                         shutil.copyfileobj(response, f)
                 except HTTPError as exc:
                     if year == today.year and exc.code == 404:
