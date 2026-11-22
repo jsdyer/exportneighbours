@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Build a browser tool using Python's standard library; no network required."""
 from html import escape
+from edition import prepare
 import json
 from pathlib import Path
 import re
@@ -51,8 +52,10 @@ def build(root=ROOT):
     with tempfile.TemporaryDirectory(prefix="coolcode-tool-") as temporary:
         stage = Path(temporary) / "site"
         shutil.copytree(web, stage)
+        dataset = prepare(root / "data", stage)
         index = stage / "index.html"
         page = index.read_text(encoding="utf-8")
+        page = page.replace("{{DATASET}}", json.dumps(dataset, ensure_ascii=False).replace("<", r"\u003c"))
         for token, key in {"TITLE": "title", "DESCRIPTION": "description", "TOOL_ID": "id", "SOURCE_URL": "source"}.items():
             placeholder = "{{" + token + "}}"
             if placeholder not in page:

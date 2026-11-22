@@ -1,16 +1,44 @@
 {
-  "id": "coolcode-tool-template",
-  "title": "CoolCode Tool Starter",
-  "description": "A browser-only example that trims lines and removes exact duplicates.",
-  "category": "security",
-  "tags": ["text", "lines", "duplicates"],
-  "icon": "scan-search",
-  "url": "/coolcode-tool-template/",
-  "source": "https://github.com/jsdyer/coolcode-tool-template",
+  "id": "exportneighbours",
+  "title": "Export Neighbours",
+  "description": "Explore where Canadian provinces send lobster, lumber and other domestic exports, and see which destinations gain or lose share.",
+  "category": "money",
+  "tags": [
+    "exports",
+    "international trade",
+    "Statistics Canada",
+    "Nova Scotia",
+    "British Columbia",
+    "lobster",
+    "softwood lumber"
+  ],
+  "icon": "globe",
+  "url": "/exportneighbours/",
+  "source": "https://github.com/jsdyer/exportneighbours",
   "hosting": "project",
   "access": "browser",
   "data_info": {
-    "mode": "local",
-    "detail": "The browser reads the text you paste and compares its lines."
+    "mode": "snapshot",
+    "cadence": "Monthly",
+    "detail": "Statistics Canada customs records show monthly domestic export value by province of origin, product and destination.",
+    "probes": [
+      {
+        "label": "Trade data retrieved",
+        "url": "https://coolcode.ca/exportneighbours/data/edition.json",
+        "path": [
+          "retrieved"
+        ]
+      },
+      {
+        "label": "Trade months",
+        "url": "https://coolcode.ca/exportneighbours/data/edition.json",
+        "path": [
+          "start"
+        ],
+        "end_path": [
+          "end"
+        ]
+      }
+    ]
   }
 }
