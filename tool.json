@@ -12,7 +12,7 @@
     "lobster",
     "softwood lumber"
   ],
-  "icon": "globe",
+  "icon": "chart-candlestick",
   "url": "/exportneighbours/",
   "source": "https://github.com/jsdyer/exportneighbours",
   "hosting": "project",
