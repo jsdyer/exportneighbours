@@ -46,7 +46,8 @@ def main():
                 assert download.value.suggested_filename.endswith(".csv")
                 page.screenshot(path=str(screenshots / "desktop.png"), full_page=True)
                 page.set_viewport_size({"width": 390, "height": 844})
-                assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
+                overflowing = page.evaluate("""Array.from(document.querySelectorAll('body *')).filter(el => el.getBoundingClientRect().right > innerWidth && !el.closest('.tablewrap')).map(el => el.tagName + '#' + el.id)""")
+                assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth"), overflowing
                 page.screenshot(path=str(screenshots / "mobile.png"), full_page=True)
                 assert not errors, errors
                 browser.close()
