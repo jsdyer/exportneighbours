@@ -19,7 +19,7 @@
   "access": "browser",
   "data_info": {
     "mode": "snapshot",
-    "cadence": "Monthly",
+    "cadence": "Weekly checks for monthly releases",
     "detail": "Statistics Canada customs records show monthly domestic export value by province of origin, product and destination.",
     "probes": [
       {
