@@ -34,6 +34,14 @@ Contains information adapted from Statistics Canada and used under the [Statisti
 
 ## Build
 
+Downloads are size-bounded and checked for ZIP integrity before they are accepted.
+A transient network error, server error or invalid ZIP gets one retry after five
+seconds. HTTP 403/429 responses are left to the independent watchdog's later retry;
+they are not hammered within a run. Diagnostics name the archive URL, response type
+and bytes received without logging response bodies. Failed attempts leave the last
+published edition and its retrieval date unchanged. `--cache DIR` accepts validated
+`YYYY.zip` archives; invalid supplied archives fail clearly and are not overwritten.
+
 Use Python 3.12 and Node.js 22+. Run `python3 scripts/refresh.py` to retrieve and validate the official archives, or use the committed edition for an offline build. Run `node --test tests/*.test.mjs`, `python3 -m unittest discover -s tests -v`, then `python3 scripts/build.py`. Serve `dist/` locally. For the browser checks install the Playwright dependency from `tests/browser-requirements.txt` and Chromium, then run `python3 tests/browser_smoke.py`. You can set `CHROMIUM_PATH` to a local Chromium executable. The published HTML includes static Dataset structured data pointing to the compressed CSV.
 
 <!-- schedule-reliability -->

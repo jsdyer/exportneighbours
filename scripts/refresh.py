@@ -12,11 +12,13 @@ import tempfile
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 import shutil
+import time
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 URL = 'https://www150.statcan.gc.ca/n1/pub/71-607-x/2021004/zip/CIMT-CICM_Dom_Exp_{}.zip'
 FIRST_YEAR = 2023
+MAX_ARCHIVE_BYTES = 250_000_000
 PRODUCTS = {
     'lobster': ('Lobster, live, fresh or chilled', '030632'),
     'frozen': ('Frozen lobster', '030612'),
@@ -28,6 +30,54 @@ PRODUCTS = {
     'wood': ('Wood, wood articles and wood charcoal', '44'),
     'all': ('All merchandise', 'All HS chapters'),
 }
+
+def validate_zip(path):
+    if not zipfile.is_zipfile(path):
+        raise ValueError('response is not a ZIP archive (possibly an error page or incomplete download)')
+    with zipfile.ZipFile(path) as archive:
+        bad = archive.testzip()
+        if bad:
+            raise ValueError('ZIP integrity check failed')
+
+
+def download_archive(url, destination, opener=urlopen, sleep=time.sleep):
+    """Install only a complete ZIP; retry transient responses once, never 403/429."""
+    destination = Path(destination)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    temporary = destination.with_suffix('.part')
+    for attempt in range(2):
+        details = 'no response received'
+        try:
+            request = Request(url, headers={'User-Agent': 'CoolCode/1.0 (+https://coolcode.ca/exportneighbours/)',
+                                            'Accept': 'application/zip, application/octet-stream;q=0.9'})
+            with opener(request, timeout=120) as response, temporary.open('wb') as output:
+                size = 0
+                content_type = response.headers.get('Content-Type', 'unknown')[:120]
+                status = getattr(response, 'status', 200)
+                while chunk := response.read(128 * 1024):
+                    size += len(chunk)
+                    details = f'HTTP {status}, Content-Type {content_type}, {size} bytes'
+                    if size > MAX_ARCHIVE_BYTES:
+                        raise ValueError('archive exceeds the configured size limit')
+                    output.write(chunk)
+            details = f'HTTP {status}, Content-Type {content_type}, {size} bytes'
+            validate_zip(temporary)
+            temporary.replace(destination)
+            return
+        except HTTPError as error:
+            # Preserve HTTP status handling, including a not-yet-published current year.
+            if error.code not in (500, 502, 503, 504) or attempt:
+                raise
+            failure = f'HTTP {error.code}'
+        except (OSError, ValueError, zipfile.BadZipFile) as error:
+            failure = f'{details}: {error}'
+            if attempt:
+                raise OSError(f'Archive download failed: {url}: {failure}') from error
+        finally:
+            temporary.unlink(missing_ok=True)
+        print(f'Archive download retry in 5 seconds: {url}: {failure}', flush=True)
+        sleep(5)
+
 
 def parse_archive(path, year, values, countries, provinces):
     months = set()
@@ -86,13 +136,17 @@ def refresh(folder, cache=None):
             archive = (Path(cache) if cache else Path(tmp)) / f'{year}.zip'
             if not archive.exists():
                 try:
-                    request = Request(url, headers={'User-Agent':'CoolCode/1.0 (+https://coolcode.ca/exportneighbours/)'})
-                    with urlopen(request, timeout=120) as response, archive.open('wb') as f:
-                        shutil.copyfileobj(response, f)
+                    download_archive(url, archive)
                 except HTTPError as exc:
                     if year == today.year and exc.code == 404:
                         break
                     raise
+            else:
+                # Caller-supplied archives must not bypass validation or be overwritten.
+                try:
+                    validate_zip(archive)
+                except (ValueError, OSError, zipfile.BadZipFile) as error:
+                    raise ValueError(f'Invalid supplied archive {archive}: {error}') from error
             year_months = parse_archive(archive, year, values, countries, provinces)
             if year_months[-1][-2:] != '12' and year < today.year - 1:
                 raise ValueError(f'Missing December {year}')
